@@ -1,0 +1,5 @@
+{
+  "name": "BanglaNote AI",
+  "description": "A modern web application to convert handwritten Bangla notes into editable digital text using Gemini AI, with features for formatting, summarizing, and translation.",
+  "requestFramePermissions": []
+}
