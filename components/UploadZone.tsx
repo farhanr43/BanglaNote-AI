@@ -36,13 +36,13 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading }) => {
 
   const validateAndProcess = (file: File) => {
     // Basic validation
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-      alert('Currently only JPG, PNG, and WEBP images are supported for client-side processing.');
+      alert('Currently only JPG, PNG, WEBP images and PDF documents are supported.');
       return;
     }
     if (file.size > 10 * 1024 * 1024) { // 10MB
-      alert('File is too large. Please upload an image under 10MB.');
+      alert('File is too large. Please upload a file under 10MB.');
       return;
     }
     onFileSelect(file);
@@ -54,7 +54,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading }) => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`
-        relative border-2 border-dashed rounded-2xl p-6 sm:p-12 text-center transition-all duration-300
+        relative border-2 border-dashed rounded-2xl p-4 sm:p-8 md:p-12 text-center transition-all duration-300
         ${isDragging 
           ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20' 
           : 'border-gray-300 dark:border-gray-700 hover:border-teal-400 dark:hover:border-teal-600 bg-gray-50 dark:bg-gray-800/50'}
@@ -65,7 +65,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading }) => {
         type="file"
         id="file-upload"
         className="hidden"
-        accept="image/jpeg, image/png, image/webp"
+        accept="image/jpeg, image/png, image/webp, application/pdf"
         onChange={handleFileInput}
         disabled={isLoading}
       />
@@ -77,10 +77,10 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading }) => {
           </svg>
         </div>
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">
-          Upload Handwritten Note
+          Upload Note or PDF
         </h3>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-4">
-          Drag & drop or click to upload. Supports JPG, PNG.
+          Drag & drop or click to upload. Supports JPG, PNG, PDF.
         </p>
         <span className="text-xs text-teal-600 font-medium bg-teal-50 dark:bg-teal-900/30 px-3 py-1 rounded-full">
           AI Powered OCR

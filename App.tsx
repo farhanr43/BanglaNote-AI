@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [extractedText, setExtractedText] = useState<string>("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<string>("");
 
   // Theme Toggling
   useEffect(() => {
@@ -65,6 +66,7 @@ const App: React.FC = () => {
       // Create local preview
       const objectUrl = URL.createObjectURL(file);
       setOriginalImage(objectUrl);
+      setFileType(file.type);
 
       // Convert to Base64 for API
       const base64Data = await fileToGenerativePart(file);
@@ -79,7 +81,7 @@ const App: React.FC = () => {
       setStatus(ProcessingStatus.SUCCESS);
     } catch (error) {
       console.error(error);
-      alert("Failed to process image. Please try again.");
+      alert("Failed to process file. Please try again.");
       setStatus(ProcessingStatus.ERROR);
     }
   };
@@ -116,10 +118,10 @@ const App: React.FC = () => {
         {/* Intro Section */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl mb-4 leading-tight">
-            Convert <span className="text-teal-600 block sm:inline">Bangla Handwritten</span> Notes to Digital Text
+            Convert <span className="text-teal-600 block sm:inline">Bangla & English</span> Notes to Digital Text
           </h1>
           <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Upload your class notes or documents. Our AI will extract the text, fix grammar, and help you summarize or translate it instantly.
+            Upload your class notes or PDF documents. Our AI will extract the text, fix grammar, and help you summarize or translate it instantly.
           </p>
         </div>
 
@@ -140,9 +142,18 @@ const App: React.FC = () => {
 
             {originalImage && (
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Original Note</h3>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Original File</h3>
                 <div className="relative rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 w-full max-h-[300px] lg:h-auto flex items-center justify-center">
-                   <img src={originalImage} alt="Uploaded Note" className="max-w-full max-h-64 object-contain" />
+                   {fileType === 'application/pdf' ? (
+                     <div className="flex flex-col items-center justify-center p-8 text-gray-400">
+                       <svg className="w-16 h-16 mb-2 text-teal-600/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                       </svg>
+                       <span className="text-sm font-medium text-gray-600 dark:text-gray-300">PDF Document Uploaded</span>
+                     </div>
+                   ) : (
+                     <img src={originalImage} alt="Uploaded Note" className="max-w-full max-h-64 object-contain" />
+                   )}
                 </div>
               </div>
             )}
