@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [extractedText, setExtractedText] = useState<string>("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<string>("");
   const [currentView, setCurrentView] = useState<'HOME' | 'PRIVACY' | 'TERMS' | 'ADMIN'>('HOME');
   
   // Feedback States
@@ -74,6 +75,7 @@ const App: React.FC = () => {
       // Create local preview
       const objectUrl = URL.createObjectURL(file);
       setOriginalImage(objectUrl);
+      setFileType(file.type);
 
       // Convert to Base64 for API
       const base64Data = await fileToGenerativePart(file);
@@ -88,7 +90,7 @@ const App: React.FC = () => {
       setStatus(ProcessingStatus.SUCCESS);
     } catch (error) {
       console.error(error);
-      alert("Failed to process image. Please try again.");
+      alert("Failed to process file. Please try again.");
       setStatus(ProcessingStatus.ERROR);
     }
   };
@@ -120,6 +122,7 @@ const App: React.FC = () => {
     setStatus(ProcessingStatus.IDLE);
     setExtractedText("");
     setOriginalImage(null);
+    setFileType("");
     setCurrentView('HOME');
   };
 
@@ -133,18 +136,12 @@ const App: React.FC = () => {
         throw error;
       }
       
-      // Navigate Home handled by component effect or standard flow, 
-      // but here we wait for modal success animation to finish (handled in Modal component)
-      // We just reset view state after a brief delay if needed, but Modal handles the visual success.
-      // The requirement was "return to homepage" after thank you. 
-      // The Modal calls onClose, which just closes modal. 
-      // We can enforce HOME view here:
       setCurrentView('HOME');
 
     } catch (error) {
       console.error('Error submitting feedback:', error);
       alert('Failed to submit feedback. Please check your internet connection.');
-      throw error; // Re-throw to let Modal know it failed
+      throw error;
     }
   };
 
@@ -164,10 +161,10 @@ const App: React.FC = () => {
             {/* Intro Section */}
             <div className="text-center mb-8">
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl mb-4 leading-tight">
-                Convert <span className="text-teal-600 block sm:inline">Bangla Handwritten</span> Notes to Digital Text
+                Convert <span className="text-teal-600 block sm:inline">Bangla & English</span> Notes to Digital Text
               </h1>
               <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Upload your class notes or documents. Our AI will extract the text, fix grammar, and help you summarize or translate it instantly.
+                Upload your class notes, documents, or PDFs. Our AI will extract the text, fix grammar, and help you summarize or translate it instantly.
               </p>
             </div>
 
@@ -188,9 +185,23 @@ const App: React.FC = () => {
 
                 {originalImage && (
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Original Note</h3>
-                    <div className="relative rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 w-full max-h-[300px] lg:h-auto flex items-center justify-center">
-                       <img src={originalImage} alt="Uploaded Note" className="max-w-full max-h-64 object-contain" />
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Original File</h3>
+                    <div className="relative rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 w-full max-h-[400px] flex items-center justify-center">
+                       {fileType === 'application/pdf' ? (
+                         <div className="w-full h-64 sm:h-80">
+                           <iframe 
+                             src={`${originalImage}#toolbar=0&navpanes=0`}
+                             className="w-full h-full rounded-lg"
+                             title="PDF Preview"
+                           />
+                         </div>
+                       ) : (
+                         <img 
+                           src={originalImage} 
+                           alt="Uploaded Note" 
+                           className="max-w-full max-h-64 object-contain" 
+                         />
+                       )}
                     </div>
                   </div>
                 )}
