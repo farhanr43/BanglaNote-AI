@@ -15,7 +15,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ feedbackList }) => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Hardcoded credentials for demo purposes
-    if (username === 'admin' && password === 'admin123') {
+    if (username === 'endless' && password === '20043') {
       setIsAuthenticated(true);
       setError('');
     } else {
