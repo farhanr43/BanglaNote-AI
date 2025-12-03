@@ -144,7 +144,9 @@ const App: React.FC = () => {
     const updatedList = [newFeedback, ...feedbackList];
     setFeedbackList(updatedList);
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(updatedList));
-    alert("Thank you for your feedback!");
+    
+    // Return to homepage
+    setCurrentView('HOME');
   };
 
   return (
