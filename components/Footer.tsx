@@ -1,12 +1,8 @@
 import React from 'react';
 
-interface FooterProps {
-  onNavigate: (view: 'privacy' | 'terms' | 'admin') => void;
-}
-
-const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+const Footer: React.FC = () => {
   return (
-    <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-auto">
+    <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-12">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex justify-center md:justify-start">
@@ -16,32 +12,19 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 href="https://www.facebook.com/farhan0043" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-teal-600 hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300 font-medium transition-colors"
+                className="text-teal-600 hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300 font-medium"
               >
                 Farhan Rahman
               </a>
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex justify-center space-x-6">
-            <button 
-              onClick={() => onNavigate('privacy')}
-              className="text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-            >
-              Privacy Policy
-            </button>
-            <button 
-              onClick={() => onNavigate('terms')}
-              className="text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-            >
-              Terms of Service
-            </button>
-            <button 
-              onClick={() => onNavigate('admin')}
-              className="text-gray-300 hover:text-gray-500 dark:hover:text-gray-600 transition-colors text-xs"
-              aria-label="Admin Access"
-            >
-              Admin
-            </button>
+            <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+              Privacy
+            </a>
+            <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+              Terms
+            </a>
           </div>
         </div>
       </div>

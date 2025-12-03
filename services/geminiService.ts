@@ -21,7 +21,7 @@ export const fileToGenerativePart = async (file: File): Promise<string> => {
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
-      // Remove the data URL prefix (e.g., "data:image/jpeg;base64," or "data:application/pdf;base64,")
+      // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
       const base64Data = base64String.split(',')[1];
       resolve(base64Data);
     };
@@ -31,12 +31,12 @@ export const fileToGenerativePart = async (file: File): Promise<string> => {
 };
 
 /**
- * Main function to handle Image/PDF OCR
+ * Main function to handle Image OCR
  */
-export const processImage = async (base64Data: string, mimeType: string): Promise<string> => {
+export const processImage = async (base64Image: string, mimeType: string): Promise<string> => {
   try {
     const ai = getClient();
-    // Using gemini-2.5-flash for speed and efficiency with vision/document tasks
+    // Using gemini-2.5-flash for speed and efficiency with vision tasks
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {
@@ -44,7 +44,7 @@ export const processImage = async (base64Data: string, mimeType: string): Promis
           {
             inlineData: {
               mimeType: mimeType,
-              data: base64Data,
+              data: base64Image,
             },
           },
           {
@@ -89,7 +89,7 @@ export const transformText = async (text: string, action: AIActionType): Promise
         return text;
     }
 
-    // Using gemini-2.5-flash for text processing as well
+    // Using gemini-2.5-flash for text processing as well, effectively capable
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: `${prompt}\n\n---\n\n${text}`,

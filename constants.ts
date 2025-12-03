@@ -1,6 +1,6 @@
 // Prompts specifically tuned for Gemini models
 export const PROMPTS = {
-  OCR: `Extract all Bangla and English handwritten text from this document. 
+  OCR: `Extract all Bangla handwritten text from this image. 
   - Maintain paragraph structure, titles, bullets, numbering, and mathematical symbols exactly as they appear.
   - Do not add any introductory or concluding remarks.
   - Return ONLY the extracted text.`,
@@ -25,4 +25,3 @@ export const PROMPTS = {
 };
 
 export const MOCK_HISTORY_KEY = 'banglanote_history';
-export const FEEDBACK_STORAGE_KEY = 'banglanote_feedback';

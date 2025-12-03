@@ -6,13 +6,6 @@ export interface Note {
   fileName: string;
 }
 
-export interface Feedback {
-  id: string;
-  name: string;
-  message: string;
-  date: string;
-}
-
 export enum ProcessingStatus {
   IDLE = 'IDLE',
   UPLOADING = 'UPLOADING',
