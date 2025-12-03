@@ -1,20 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FeedbackItem } from '../types';
 import Button from './Button';
+import { supabase } from '../services/supabaseClient';
 
-interface AdminPanelProps {
-  feedbackList: FeedbackItem[];
-}
-
-const AdminPanel: React.FC<AdminPanelProps> = ({ feedbackList }) => {
+const AdminPanel: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  
+  // Data States
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  // Fetch feedback once authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchFeedback();
+    }
+  }, [isAuthenticated]);
+
+  const fetchFeedback = async () => {
+    setIsLoadingData(true);
+    try {
+      const { data, error } = await supabase
+        .from('feedback')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        // Map Supabase columns to our FeedbackItem type
+        const mappedData: FeedbackItem[] = data.map((item: any) => ({
+          id: item.id.toString(),
+          name: item.name,
+          message: item.message,
+          date: item.created_at
+        }));
+        setFeedbackList(mappedData);
+      }
+    } catch (err) {
+      console.error('Error fetching feedback:', err);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Hardcoded credentials for demo purposes
+    // Hardcoded credentials for client-side demo
     if (username === 'endless' && password === '20043') {
       setIsAuthenticated(true);
       setError('');
@@ -27,6 +62,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ feedbackList }) => {
     setIsAuthenticated(false);
     setUsername('');
     setPassword('');
+    setFeedbackList([]);
   };
 
   if (!isAuthenticated) {
@@ -84,13 +120,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ feedbackList }) => {
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Feedback Dashboard</h1>
-        <Button variant="outline" onClick={handleLogout} className="text-sm">
-          Log Out
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={fetchFeedback} className="text-sm" disabled={isLoadingData}>
+             Refresh
+          </Button>
+          <Button variant="outline" onClick={handleLogout} className="text-sm">
+            Log Out
+          </Button>
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {feedbackList.length === 0 ? (
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[200px]">
+        {isLoadingData ? (
+          <div className="flex flex-col items-center justify-center h-48">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+            <p className="mt-2 text-sm text-gray-500">Loading data from Supabase...</p>
+          </div>
+        ) : feedbackList.length === 0 ? (
           <div className="p-12 text-center text-gray-500 dark:text-gray-400">
             No feedback submitted yet.
           </div>

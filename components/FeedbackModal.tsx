@@ -4,35 +4,43 @@ import Button from './Button';
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (name: string, message: string) => void;
+  onSubmit: (name: string, message: string) => Promise<void>;
 }
 
 const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim() && message.trim()) {
-      // Submit data immediately
-      onSubmit(name, message);
-      
-      // Show success state
-      setIsSuccess(true);
-      
-      // Close after 2 seconds
-      setTimeout(() => {
-        onClose();
-        // Reset state after transition
+      setIsSubmitting(true);
+      try {
+        await onSubmit(name, message);
+        
+        // Show success state only after successful API call
+        setIsSuccess(true);
+        
+        // Close after 2 seconds
         setTimeout(() => {
-          setIsSuccess(false);
-          setName('');
-          setMessage('');
-        }, 300);
-      }, 2000);
+          onClose();
+          // Reset state after transition
+          setTimeout(() => {
+            setIsSuccess(false);
+            setIsSubmitting(false);
+            setName('');
+            setMessage('');
+          }, 300);
+        }, 2000);
+      } catch (error) {
+        console.error("Submission error", error);
+        setIsSubmitting(false);
+        // Error handling could be added here (e.g. show a toast)
+      }
     }
   };
 
@@ -41,7 +49,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
-        onClick={isSuccess ? undefined : onClose}
+        onClick={isSuccess || isSubmitting ? undefined : onClose}
       />
 
       <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
@@ -77,7 +85,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2 px-3"
+                      disabled={isSubmitting}
+                      className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2 px-3 disabled:opacity-50"
                       placeholder="Your name"
                     />
                   </div>
@@ -92,7 +101,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit
                       rows={4}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2 px-3 resize-none"
+                      disabled={isSubmitting}
+                      className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2 px-3 resize-none disabled:opacity-50"
                       placeholder="Tell us what you think..."
                     />
                   </div>
@@ -102,14 +112,17 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit
                       type="submit"
                       variant="primary"
                       className="w-full sm:col-start-2"
+                      isLoading={isSubmitting}
+                      disabled={isSubmitting}
                     >
-                      Submit Feedback
+                      {isSubmitting ? 'Sending...' : 'Submit Feedback'}
                     </Button>
                     <Button
                       type="button"
                       variant="secondary"
                       className="mt-3 w-full sm:mt-0 sm:col-start-1"
                       onClick={onClose}
+                      disabled={isSubmitting}
                     >
                       Cancel
                     </Button>

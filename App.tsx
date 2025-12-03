@@ -8,11 +8,10 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import FeedbackModal from './components/FeedbackModal';
 import AdminPanel from './components/AdminPanel';
-import { ProcessingStatus, AIActionType, HistoryItem, FeedbackItem } from './types';
+import { ProcessingStatus, AIActionType, HistoryItem } from './types';
 import { processImage, transformText, fileToGenerativePart } from './services/geminiService';
 import { MOCK_HISTORY_KEY } from './constants';
-
-const FEEDBACK_STORAGE_KEY = 'banglanote_feedback';
+import { supabase } from './services/supabaseClient';
 
 const App: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
@@ -24,7 +23,6 @@ const App: React.FC = () => {
   
   // Feedback States
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
 
   // Theme Toggling
   useEffect(() => {
@@ -41,7 +39,7 @@ const App: React.FC = () => {
     }
   }, [isDark]);
 
-  // Load History & Feedback
+  // Load History (Local Storage only for privacy)
   useEffect(() => {
     const savedHistory = localStorage.getItem(MOCK_HISTORY_KEY);
     if (savedHistory) {
@@ -49,15 +47,6 @@ const App: React.FC = () => {
         setHistory(JSON.parse(savedHistory));
       } catch (e) {
         console.error("Failed to parse history", e);
-      }
-    }
-
-    const savedFeedback = localStorage.getItem(FEEDBACK_STORAGE_KEY);
-    if (savedFeedback) {
-      try {
-        setFeedbackList(JSON.parse(savedFeedback));
-      } catch (e) {
-        console.error("Failed to parse feedback", e);
       }
     }
   }, []);
@@ -134,19 +123,29 @@ const App: React.FC = () => {
     setCurrentView('HOME');
   };
 
-  const handleFeedbackSubmit = (name: string, message: string) => {
-    const newFeedback: FeedbackItem = {
-      id: Date.now().toString(),
-      name,
-      message,
-      date: new Date().toISOString()
-    };
-    const updatedList = [newFeedback, ...feedbackList];
-    setFeedbackList(updatedList);
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(updatedList));
-    
-    // Return to homepage
-    setCurrentView('HOME');
+  const handleFeedbackSubmit = async (name: string, message: string) => {
+    try {
+      const { error } = await supabase
+        .from('feedback')
+        .insert([{ name, message }]);
+
+      if (error) {
+        throw error;
+      }
+      
+      // Navigate Home handled by component effect or standard flow, 
+      // but here we wait for modal success animation to finish (handled in Modal component)
+      // We just reset view state after a brief delay if needed, but Modal handles the visual success.
+      // The requirement was "return to homepage" after thank you. 
+      // The Modal calls onClose, which just closes modal. 
+      // We can enforce HOME view here:
+      setCurrentView('HOME');
+
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Failed to submit feedback. Please check your internet connection.');
+      throw error; // Re-throw to let Modal know it failed
+    }
   };
 
   return (
@@ -219,7 +218,7 @@ const App: React.FC = () => {
 
         {currentView === 'PRIVACY' && <PrivacyPolicy />}
         {currentView === 'TERMS' && <TermsOfService />}
-        {currentView === 'ADMIN' && <AdminPanel feedbackList={feedbackList} />}
+        {currentView === 'ADMIN' && <AdminPanel />}
 
       </main>
 
