@@ -34,3 +34,10 @@ export interface HistoryItem {
   date: string;
   fullText: string;
 }
+
+export interface FeedbackItem {
+  id: string;
+  name: string;
+  message: string;
+  date: string;
+}

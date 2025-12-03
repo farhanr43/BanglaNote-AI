@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface FooterProps {
-  onNavigate: (view: 'HOME' | 'PRIVACY' | 'TERMS') => void;
+  onNavigate: (view: 'HOME' | 'PRIVACY' | 'TERMS' | 'ADMIN') => void;
 }
 
 const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
@@ -34,6 +34,12 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
             >
               Terms
+            </button>
+            <button 
+              onClick={() => onNavigate('ADMIN')}
+              className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+            >
+              Admin
             </button>
           </div>
         </div>

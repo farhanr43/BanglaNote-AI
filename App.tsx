@@ -6,9 +6,13 @@ import Editor from './components/Editor';
 import History from './components/History';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
-import { ProcessingStatus, AIActionType, HistoryItem } from './types';
+import FeedbackModal from './components/FeedbackModal';
+import AdminPanel from './components/AdminPanel';
+import { ProcessingStatus, AIActionType, HistoryItem, FeedbackItem } from './types';
 import { processImage, transformText, fileToGenerativePart } from './services/geminiService';
 import { MOCK_HISTORY_KEY } from './constants';
+
+const FEEDBACK_STORAGE_KEY = 'banglanote_feedback';
 
 const App: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
@@ -16,7 +20,11 @@ const App: React.FC = () => {
   const [extractedText, setExtractedText] = useState<string>("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'HOME' | 'PRIVACY' | 'TERMS'>('HOME');
+  const [currentView, setCurrentView] = useState<'HOME' | 'PRIVACY' | 'TERMS' | 'ADMIN'>('HOME');
+  
+  // Feedback States
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
 
   // Theme Toggling
   useEffect(() => {
@@ -33,14 +41,23 @@ const App: React.FC = () => {
     }
   }, [isDark]);
 
-  // Load History
+  // Load History & Feedback
   useEffect(() => {
-    const saved = localStorage.getItem(MOCK_HISTORY_KEY);
-    if (saved) {
+    const savedHistory = localStorage.getItem(MOCK_HISTORY_KEY);
+    if (savedHistory) {
       try {
-        setHistory(JSON.parse(saved));
+        setHistory(JSON.parse(savedHistory));
       } catch (e) {
         console.error("Failed to parse history", e);
+      }
+    }
+
+    const savedFeedback = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+    if (savedFeedback) {
+      try {
+        setFeedbackList(JSON.parse(savedFeedback));
+      } catch (e) {
+        console.error("Failed to parse feedback", e);
       }
     }
   }, []);
@@ -117,12 +134,26 @@ const App: React.FC = () => {
     setCurrentView('HOME');
   };
 
+  const handleFeedbackSubmit = (name: string, message: string) => {
+    const newFeedback: FeedbackItem = {
+      id: Date.now().toString(),
+      name,
+      message,
+      date: new Date().toISOString()
+    };
+    const updatedList = [newFeedback, ...feedbackList];
+    setFeedbackList(updatedList);
+    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(updatedList));
+    alert("Thank you for your feedback!");
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Header 
         isDark={isDark} 
         toggleTheme={() => setIsDark(!isDark)} 
         onLogoClick={resetAppState}
+        onFeedbackClick={() => setIsFeedbackOpen(true)}
       />
       
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -186,10 +217,17 @@ const App: React.FC = () => {
 
         {currentView === 'PRIVACY' && <PrivacyPolicy />}
         {currentView === 'TERMS' && <TermsOfService />}
+        {currentView === 'ADMIN' && <AdminPanel feedbackList={feedbackList} />}
 
       </main>
 
       <Footer onNavigate={setCurrentView} />
+
+      <FeedbackModal 
+        isOpen={isFeedbackOpen} 
+        onClose={() => setIsFeedbackOpen(false)} 
+        onSubmit={handleFeedbackSubmit}
+      />
     </div>
   );
 };
