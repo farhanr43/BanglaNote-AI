@@ -1,6 +1,10 @@
 import React from 'react';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  onNavigate: (view: 'HOME' | 'PRIVACY' | 'TERMS') => void;
+}
+
+const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-12">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -19,12 +23,18 @@ const Footer: React.FC = () => {
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex justify-center space-x-6">
-            <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+            <button 
+              onClick={() => onNavigate('PRIVACY')}
+              className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+            >
               Privacy
-            </a>
-            <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+            </button>
+            <button 
+              onClick={() => onNavigate('TERMS')}
+              className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+            >
               Terms
-            </a>
+            </button>
           </div>
         </div>
       </div>
