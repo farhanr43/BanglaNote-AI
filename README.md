@@ -1,20 +1,30 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+I’m excited to share my new project: BanglaNote AI ✨
 
-# Run and deploy your AI Studio app
+A web app that converts Bangla handwriting into clean digital text.
 
-This contains everything you need to run your app locally.
+📌 Upload handwritten notes
 
-View your app in AI Studio: https://ai.studio/apps/drive/1oCsi0MhBbF8WqYKQmUdGoJSRNDgCDLus
+📌 Get instant Bangla text output
 
-## Run Locally
+📌 Auto formatting, paragraph fixing & editing
 
-**Prerequisites:**  Node.js
+📌 Export as PDF, DOCX, or TXT
 
+Built for students, teachers, and anyone who wants to digitize their notes easily. Your feedback means a lot — check it out and let me know what you think!
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+🔗 Link : https://bangla-note-ai.vercel.app/
+আমার নতুন প্রজেক্ট BanglaNote AI ✨
+
+এই ওয়েবঅ্যাপটি আপনার বাংলা হ্যান্ডরাইটিংকে পরিষ্কার ডিজিটাল টেক্সটে রূপান্তর করে ।
+
+📌 হ্যান্ডরিটেন নোট আপলোড করুন
+
+📌 সাথে সাথে ডিজিটাল বাংলা টেক্সট পান
+
+📌 অটো ফরম্যাটিং, প্যারাগ্রাফ ঠিক করা ও এডিটিং
+
+📌 PDF, DOCX বা TXT হিসেবে এক্সপোর্ট
+
+স্টুডেন্ট, শিক্ষক—যে কেউ সহজে তাদের লেখা ডিজিটাইজ করতে চাইলে এটি তাদের জন্য উপযোগী। আপনাদের মতামত আমার জন্য খুবই মূল্যবান। দেখে জানান কেমন লাগে!
+
+🔗 Click to learn more লিঙ্ক : https://bangla-note-ai.vercel.app/
