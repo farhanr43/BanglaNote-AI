@@ -4,12 +4,20 @@ import Footer from './components/Footer';
 import UploadZone from './components/UploadZone';
 import Editor from './components/Editor';
 import History from './components/History';
+import FeedbackModal from './components/FeedbackModal';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 import { ProcessingStatus, AIActionType, HistoryItem } from './types';
 import { processImage, transformText, fileToGenerativePart } from './services/geminiService';
 import { MOCK_HISTORY_KEY } from './constants';
 
+type ViewType = 'home' | 'privacy' | 'terms';
+
 const App: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
+  const [currentView, setCurrentView] = useState<ViewType>('home');
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  
   const [status, setStatus] = useState<ProcessingStatus>(ProcessingStatus.IDLE);
   const [extractedText, setExtractedText] = useState<string>("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -61,6 +69,7 @@ const App: React.FC = () => {
   const handleFileSelect = async (file: File) => {
     setStatus(ProcessingStatus.UPLOADING);
     setExtractedText("");
+    setCurrentView('home'); // Ensure we are on home when uploading
     
     try {
       // Create local preview
@@ -109,12 +118,13 @@ const App: React.FC = () => {
     localStorage.removeItem(MOCK_HISTORY_KEY);
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <Header isDark={isDark} toggleTheme={() => setIsDark(!isDark)} />
-      
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+  const renderContent = () => {
+    if (currentView === 'privacy') return <Privacy />;
+    if (currentView === 'terms') return <Terms />;
+
+    // Home View
+    return (
+      <>
         {/* Intro Section */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl mb-4 leading-tight">
@@ -125,11 +135,7 @@ const App: React.FC = () => {
           </p>
         </div>
 
-        {/* 
-            Main Layout: 
-            Mobile: Flex Column (stacks vertically) 
-            Desktop: Grid 3 columns 
-        */}
+        {/* Main Layout */}
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
           {/* Left Column: Upload & Preview */}
           <div className="lg:col-span-1 space-y-6 order-1">
@@ -166,7 +172,6 @@ const App: React.FC = () => {
           </div>
 
           {/* Right Column: Editor */}
-          {/* Mobile: Tall height 70vh, Desktop: Fills screen (calc 100vh - header/padding) */}
           <div className="lg:col-span-2 order-2 h-[70vh] min-h-[600px] lg:h-[calc(100vh-8rem)]">
              <Editor 
                 text={extractedText} 
@@ -176,9 +181,29 @@ const App: React.FC = () => {
              />
           </div>
         </div>
+      </>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      <Header 
+        isDark={isDark} 
+        toggleTheme={() => setIsDark(!isDark)} 
+        onFeedbackClick={() => setIsFeedbackOpen(true)}
+        onHomeClick={() => setCurrentView('home')}
+      />
+      
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderContent()}
       </main>
 
-      <Footer />
+      <Footer onNavigate={setCurrentView} />
+
+      <FeedbackModal 
+        isOpen={isFeedbackOpen} 
+        onClose={() => setIsFeedbackOpen(false)} 
+      />
     </div>
   );
 };
