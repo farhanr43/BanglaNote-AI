@@ -25,3 +25,4 @@ export const PROMPTS = {
 };
 
 export const MOCK_HISTORY_KEY = 'banglanote_history';
+export const FEEDBACK_STORAGE_KEY = 'banglanote_feedback';

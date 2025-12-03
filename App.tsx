@@ -7,11 +7,12 @@ import History from './components/History';
 import FeedbackModal from './components/FeedbackModal';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import Admin from './pages/Admin';
 import { ProcessingStatus, AIActionType, HistoryItem } from './types';
 import { processImage, transformText, fileToGenerativePart } from './services/geminiService';
 import { MOCK_HISTORY_KEY } from './constants';
 
-type ViewType = 'home' | 'privacy' | 'terms';
+type ViewType = 'home' | 'privacy' | 'terms' | 'admin';
 
 const App: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
@@ -121,6 +122,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (currentView === 'privacy') return <Privacy />;
     if (currentView === 'terms') return <Terms />;
+    if (currentView === 'admin') return <Admin />;
 
     // Home View
     return (

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Button from './Button';
+import { FEEDBACK_STORAGE_KEY } from '../constants';
+import { Feedback } from '../types';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -18,18 +20,36 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
+    // Simulate API delay
     setTimeout(() => {
-      console.log('Feedback submitted:', { name, feedback });
-      setIsSubmitting(false);
-      setSubmitted(true);
-      setTimeout(() => {
-        setSubmitted(false);
-        setName('');
-        setFeedback('');
-        onClose();
-      }, 2000);
-    }, 1000);
+      try {
+        const newFeedback: Feedback = {
+          id: Date.now().toString(),
+          name: name.trim() || 'Anonymous',
+          message: feedback,
+          date: new Date().toISOString()
+        };
+
+        const existingFeedbackStr = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+        const existingFeedback: Feedback[] = existingFeedbackStr ? JSON.parse(existingFeedbackStr) : [];
+        
+        const updatedFeedback = [newFeedback, ...existingFeedback];
+        localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(updatedFeedback));
+        
+        setIsSubmitting(false);
+        setSubmitted(true);
+        
+        setTimeout(() => {
+          setSubmitted(false);
+          setName('');
+          setFeedback('');
+          onClose();
+        }, 2000);
+      } catch (error) {
+        console.error("Failed to save feedback", error);
+        setIsSubmitting(false);
+      }
+    }, 800);
   };
 
   return (
@@ -57,7 +77,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
               </svg>
             </div>
             <h4 className="text-lg font-medium text-gray-900 dark:text-white">Thank you!</h4>
-            <p className="text-gray-500 dark:text-gray-400">Your feedback has been received.</p>
+            <p className="text-gray-500 dark:text-gray-400">Your feedback has been saved.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
