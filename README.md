@@ -4,7 +4,7 @@ BanglaNote AI is a web application that converts Bangla handwritten notes into c
 
 🌐 Live Demo: https://bangla-note-ai.vercel.app/
 
-##🚀 Features
+## 🚀 Features
 
 📤 Upload Bangla handwritten notes (image-based)
 
