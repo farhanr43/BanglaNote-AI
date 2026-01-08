@@ -26,15 +26,6 @@ BanglaNote AI is a web application that converts Bangla handwritten notes into c
 
 📚 Anyone who wants to digitize Bangla handwritten notes
 
-##🛠️ Tech Stack
-
-Frontend: React / Next.js
-
-Backend: AI-powered OCR & text processing
-
-Deployment: Vercel
-
-(You can customize this section if you want to list exact technologies)
 
 ## 📸 How It Works
 
