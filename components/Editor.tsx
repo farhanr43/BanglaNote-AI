@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import Button from './Button';
-import { AIActionType } from '../types';
+import { AIActionType, LayoutResult } from '../types';
+import { downloadDocx } from '../services/docxService';
 
 interface EditorProps {
   text: string;
   setText: (text: string) => void;
   onAIAction: (type: AIActionType) => void;
   isProcessing: boolean;
+  layout: LayoutResult | null;
 }
 
-const Editor: React.FC<EditorProps> = ({ text, setText, onAIAction, isProcessing }) => {
+const Editor: React.FC<EditorProps> = ({ text, setText, onAIAction, isProcessing, layout }) => {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
@@ -58,8 +60,26 @@ const Editor: React.FC<EditorProps> = ({ text, setText, onAIAction, isProcessing
     setIsDownloadOpen(false);
   };
 
-  const handlePdf = () => {
-    const printWindow = window.open('', '_blank');
+  const handleDocx = async () => {
+    setIsDownloadOpen(false);
+    try {
+      const fallbackLayout: LayoutResult = layout
+        ? layout
+        : {
+            text,
+            blocks: text
+              .split(/\n+/)
+              .filter((t) => t.trim())
+              .map((t) => ({ type: 'paragraph' as const, text: t })),
+          };
+      await downloadDocx(fallbackLayout);
+    } catch (err) {
+      console.error('Failed to export DOCX', err);
+      alert('Failed to export Word document.');
+    }
+  };
+
+  const handlePdf = () => {    const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Please allow popups to print as PDF');
       return;
@@ -192,6 +212,12 @@ const Editor: React.FC<EditorProps> = ({ text, setText, onAIAction, isProcessing
                   className="block w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
                 >
                   As .doc
+                </button>
+                <button 
+                  onClick={handleDocx} 
+                  className="block w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                >
+                  As Word (.docx)
                 </button>
                 <button 
                   onClick={handlePdf} 

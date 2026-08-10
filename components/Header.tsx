@@ -1,14 +1,33 @@
 import React from 'react';
 import Button from './Button';
+import AccountBar from './AccountBar';
+import { AuthUser, UsageSummary } from '../types';
 
 interface HeaderProps {
   toggleTheme: () => void;
   isDark: boolean;
   onLogoClick: () => void;
   onFeedbackClick: () => void;
+  user: AuthUser | null;
+  usage: UsageSummary | null;
+  onLogin: () => void;
+  onSignup: () => void;
+  onLogout: () => void;
+  onUpgrade: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ toggleTheme, isDark, onLogoClick, onFeedbackClick }) => {
+const Header: React.FC<HeaderProps> = ({
+  toggleTheme,
+  isDark,
+  onLogoClick,
+  onFeedbackClick,
+  user,
+  usage,
+  onLogin,
+  onSignup,
+  onLogout,
+  onUpgrade,
+}) => {
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -55,6 +74,15 @@ const Header: React.FC<HeaderProps> = ({ toggleTheme, isDark, onLogoClick, onFee
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                </svg>
             </button>
+
+            <AccountBar
+              user={user}
+              usage={usage}
+              onLogin={onLogin}
+              onSignup={onSignup}
+              onLogout={onLogout}
+              onUpgrade={onUpgrade}
+            />
 
             <button
               onClick={toggleTheme}

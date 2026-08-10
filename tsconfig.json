@@ -17,5 +17,11 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node"]
   },
-  "include": ["./**/*.ts", "./**/*.tsx"]
+  "include": ["./**/*.ts", "./**/*.tsx"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "supabase/functions/**",
+    "supabase/migrations/**"
+  ]
 }

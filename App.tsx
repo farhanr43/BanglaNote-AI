@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import UploadZone from './components/UploadZone';
@@ -8,22 +9,44 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import FeedbackModal from './components/FeedbackModal';
 import AdminPanel from './components/AdminPanel';
-import { ProcessingStatus, AIActionType, HistoryItem } from './types';
-import { processImage, transformText, fileToGenerativePart } from './services/geminiService';
-import { MOCK_HISTORY_KEY } from './constants';
+import AuthModal from './components/AuthModal';
+import PricingModal from './components/PricingModal';
+import StructuredPreview from './components/StructuredPreview';
+import { ProcessingStatus, AIActionType, HistoryItem, AuthUser, UsageSummary, LayoutResult } from './types';
+import { processImage, transformText, fileToGenerativePart, fetchUsage, CreditLimitError } from './services/ocrService';
+import { authService } from './services/auth';
+import { MOCK_HISTORY_KEY, MESSAGES } from './constants';
 import { supabase } from './services/supabaseClient';
+
+interface AuthModalState {
+  open: boolean;
+  mode: 'login' | 'signup';
+  message?: string;
+}
 
 const App: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
   const [status, setStatus] = useState<ProcessingStatus>(ProcessingStatus.IDLE);
   const [extractedText, setExtractedText] = useState<string>("");
+  const [layout, setLayout] = useState<LayoutResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [fileType, setFileType] = useState<string>("");
-  const [currentView, setCurrentView] = useState<'HOME' | 'PRIVACY' | 'TERMS' | 'ADMIN'>('HOME');
-  
+  const navigate = useNavigate();
+
+  // Auth & credits
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
+  const [authModal, setAuthModal] = useState<AuthModalState>({ open: false, mode: 'login' });
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+
   // Feedback States
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  const refreshUsage = async () => {
+    const summary = await fetchUsage();
+    if (summary) setUsage(summary);
+  };
 
   // Theme Toggling
   useEffect(() => {
@@ -40,6 +63,20 @@ const App: React.FC = () => {
     }
   }, [isDark]);
 
+  // Auth session + usage
+  useEffect(() => {
+    authService.getCurrentUser().then((u) => {
+      setUser(u);
+      refreshUsage();
+    });
+    const unsubscribe = authService.onAuthChange((u) => {
+      setUser(u);
+      refreshUsage();
+    });
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load History (Local Storage only for privacy)
   useEffect(() => {
     const savedHistory = localStorage.getItem(MOCK_HISTORY_KEY);
@@ -54,60 +91,87 @@ const App: React.FC = () => {
 
   const saveToHistory = (text: string) => {
     if (!text.trim()) return;
-    
+
     const newItem: HistoryItem = {
       id: Date.now().toString(),
       previewText: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
       fullText: text,
       date: new Date().toISOString()
     };
-    
+
     const newHistory = [newItem, ...history].slice(0, 5); // Keep last 5
     setHistory(newHistory);
     localStorage.setItem(MOCK_HISTORY_KEY, JSON.stringify(newHistory));
   };
 
+  const openLoginWithMessage = (message?: string) => {
+    setAuthModal({ open: true, mode: 'login', message });
+  };
+
+  const handleLimitReached = (err: CreditLimitError) => {
+    if (err.isGuest) {
+      openLoginWithMessage(MESSAGES.GUEST_LIMIT_REACHED);
+    } else {
+      setIsPricingOpen(true);
+    }
+  };
+
   const handleFileSelect = async (file: File) => {
+    // Proactive check when we already know the limit is exhausted
+    if (usage && usage.remaining <= 0) {
+      if (user) {
+        setIsPricingOpen(true);
+      } else {
+        openLoginWithMessage(MESSAGES.GUEST_LIMIT_REACHED);
+      }
+      return;
+    }
+
     setStatus(ProcessingStatus.UPLOADING);
     setExtractedText("");
-    
+    setLayout(null);
+
     try {
-      // Create local preview
       const objectUrl = URL.createObjectURL(file);
       setOriginalImage(objectUrl);
       setFileType(file.type);
 
-      // Convert to Base64 for API
       const base64Data = await fileToGenerativePart(file);
-      
+
       setStatus(ProcessingStatus.PROCESSING);
-      
-      // Call Gemini API
-      const text = await processImage(base64Data, file.type);
-      
-      setExtractedText(text);
-      saveToHistory(text);
+
+      const result = await processImage(base64Data, file.type);
+
+      setExtractedText(result.text);
+      setLayout(result.layout);
+      if (result.summary) setUsage(result.summary);
+      saveToHistory(result.text);
       setStatus(ProcessingStatus.SUCCESS);
     } catch (error) {
       console.error(error);
-      alert("Failed to process file. Please try again.");
+      if (error instanceof CreditLimitError) {
+        setStatus(ProcessingStatus.ERROR);
+        handleLimitReached(error);
+        return;
+      }
+      alert(MESSAGES.OCR_FAILED);
       setStatus(ProcessingStatus.ERROR);
     }
   };
 
   const handleAIAction = async (action: AIActionType) => {
     if (!extractedText) return;
-    
+
     const previousText = extractedText;
     setStatus(ProcessingStatus.PROCESSING);
-    
+
     try {
       const newText = await transformText(extractedText, action);
       setExtractedText(newText);
       setStatus(ProcessingStatus.SUCCESS);
     } catch (error) {
       console.error(error);
-      alert("AI Processing failed.");
+      alert(MESSAGES.AI_FAILED);
       setExtractedText(previousText); // Revert
       setStatus(ProcessingStatus.IDLE);
     }
@@ -121,9 +185,14 @@ const App: React.FC = () => {
   const resetAppState = () => {
     setStatus(ProcessingStatus.IDLE);
     setExtractedText("");
+    setLayout(null);
     setOriginalImage(null);
     setFileType("");
-    setCurrentView('HOME');
+    navigate('/');
+  };
+
+  const handleLogout = async () => {
+    await authService.signOut();
   };
 
   const handleFeedbackSubmit = async (name: string, message: string) => {
@@ -135,9 +204,8 @@ const App: React.FC = () => {
       if (error) {
         throw error;
       }
-      
-      setCurrentView('HOME');
 
+      navigate('/');
     } catch (error) {
       console.error('Error submitting feedback:', error);
       alert('Failed to submit feedback. Please check your internet connection.');
@@ -147,17 +215,23 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <Header 
-        isDark={isDark} 
-        toggleTheme={() => setIsDark(!isDark)} 
+      <Header
+        isDark={isDark}
+        toggleTheme={() => setIsDark(!isDark)}
         onLogoClick={resetAppState}
         onFeedbackClick={() => setIsFeedbackOpen(true)}
+        user={user}
+        usage={usage}
+        onLogin={() => setAuthModal({ open: true, mode: 'login' })}
+        onSignup={() => setAuthModal({ open: true, mode: 'signup' })}
+        onLogout={handleLogout}
+        onUpgrade={() => setIsPricingOpen(true)}
       />
-      
+
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {currentView === 'HOME' && (
-          <>
+        <Routes>
+
+        <Route path="/" element={<>
             {/* Intro Section */}
             <div className="text-center mb-8">
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl mb-4 leading-tight">
@@ -168,18 +242,13 @@ const App: React.FC = () => {
               </p>
             </div>
 
-            {/* 
-                Main Layout: 
-                Mobile: Flex Column (stacks vertically) 
-                Desktop: Grid 3 columns 
-            */}
             <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
               {/* Left Column: Upload & Preview */}
               <div className="lg:col-span-1 space-y-6 order-1">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-1">
-                  <UploadZone 
-                    onFileSelect={handleFileSelect} 
-                    isLoading={status === ProcessingStatus.PROCESSING || status === ProcessingStatus.UPLOADING} 
+                  <UploadZone
+                    onFileSelect={handleFileSelect}
+                    isLoading={status === ProcessingStatus.PROCESSING || status === ProcessingStatus.UPLOADING}
                   />
                 </div>
 
@@ -189,56 +258,93 @@ const App: React.FC = () => {
                     <div className="relative rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 w-full max-h-[400px] flex items-center justify-center">
                        {fileType === 'application/pdf' ? (
                          <div className="w-full h-64 sm:h-80">
-                           <iframe 
+                           <iframe
                              src={`${originalImage}#toolbar=0&navpanes=0`}
                              className="w-full h-full rounded-lg"
                              title="PDF Preview"
                            />
                          </div>
                        ) : (
-                         <img 
-                           src={originalImage} 
-                           alt="Uploaded Note" 
-                           className="max-w-full max-h-64 object-contain" 
+                         <img
+                           src={originalImage}
+                           alt="Uploaded Note"
+                           className="max-w-full max-h-64 object-contain"
                          />
                        )}
                     </div>
                   </div>
                 )}
 
-                <History 
-                  history={history} 
-                  onSelect={(item) => setExtractedText(item.fullText)} 
+                <History
+                  history={history}
+                  onSelect={(item) => { setExtractedText(item.fullText); setLayout(null); }}
                   onClear={clearHistory}
                 />
               </div>
 
               {/* Right Column: Editor */}
-              {/* Mobile: Tall height 70vh, Desktop: Fills screen (calc 100vh - header/padding) */}
               <div className="lg:col-span-2 order-2 h-[70vh] min-h-[600px] lg:h-[calc(100vh-8rem)]">
-                 <Editor 
-                    text={extractedText} 
-                    setText={setExtractedText} 
+                 <Editor
+                    text={extractedText}
+                    setText={setExtractedText}
                     onAIAction={handleAIAction}
                     isProcessing={status === ProcessingStatus.PROCESSING}
+                    layout={layout}
                  />
               </div>
             </div>
-          </>
-        )}
 
-        {currentView === 'PRIVACY' && <PrivacyPolicy />}
-        {currentView === 'TERMS' && <TermsOfService />}
-        {currentView === 'ADMIN' && <AdminPanel />}
+            {/* Formatted preview (approximation of the Word output) */}
+            {layout && (
+              <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Formatted Preview
+                  </h2>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Approximate look of the exported Word document
+                  </span>
+                </div>
+                <div className="p-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                  <StructuredPreview layout={layout} />
+                </div>
+              </div>
+            )}
+          </>} />
 
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+
+        </Routes>
       </main>
 
-      <Footer onNavigate={setCurrentView} />
+      <Footer />
 
-      <FeedbackModal 
-        isOpen={isFeedbackOpen} 
-        onClose={() => setIsFeedbackOpen(false)} 
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
         onSubmit={handleFeedbackSubmit}
+      />
+
+      <AuthModal
+        isOpen={authModal.open}
+        initialMode={authModal.mode}
+        message={authModal.message}
+        onClose={() => setAuthModal({ open: false, mode: authModal.mode })}
+        onAuthenticated={refreshUsage}
+      />
+
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        user={user}
+        usage={usage}
+        onRequireLogin={() => {
+          setIsPricingOpen(false);
+          openLoginWithMessage('Please log in or create a free account to request an upgrade.');
+        }}
       />
     </div>
   );

@@ -1,4 +1,6 @@
-// Prompts specifically tuned for Gemini models
+import { Plan } from './types';
+
+// Prompts specifically tuned for Gemini models (text transforms run server-side)
 export const PROMPTS = {
   OCR: `Extract all text (Bangla and English) from this document. 
   - Maintain paragraph structure, titles, bullets, numbering, and mathematical symbols exactly as they appear.
@@ -25,3 +27,51 @@ export const PROMPTS = {
 };
 
 export const MOCK_HISTORY_KEY = 'banglanote_history';
+
+// ---------------------------------------------------------------------------
+// Auth, plans & credits
+// ---------------------------------------------------------------------------
+export const GUEST_OCR_LIMIT = 3;
+
+export const SUPABASE_PROJECT_URL = 'https://qfuzcgdkzcjwfrkfdsvx.supabase.co';
+export const AI_PROXY_URL =
+  (import.meta.env.VITE_EDGE_FUNCTION_URL as string) ||
+  `${SUPABASE_PROJECT_URL}/functions/v1/ai-proxy`;
+export const ADMIN_GRANT_URL = `${SUPABASE_PROJECT_URL}/functions/v1/admin-grant`;
+export const ADMIN_TOKEN = (import.meta.env.VITE_ADMIN_TOKEN as string) || '';
+
+// Mirrors the seeded `plans` table; used for pricing UI only.
+// The backend (plans table) remains the source of truth for limits.
+export const PLANS: Plan[] = [
+  {
+    id: 'free',
+    name: 'Free',
+    priceBdt: 0,
+    dailyOcrLimit: 10,
+    benefits: ['10 OCR credits per day', 'Text / TXT export', 'PDF & image upload'],
+  },
+  {
+    id: 'standard',
+    name: 'Standard',
+    priceBdt: 50,
+    dailyOcrLimit: 50,
+    benefits: ['50 OCR credits per day', 'Editable DOCX export', 'Layout-aware preview', 'Priority support'],
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    priceBdt: 100,
+    dailyOcrLimit: 100,
+    benefits: ['100 OCR credits per day', 'Editable DOCX export', 'Layout-aware preview', 'Priority support'],
+  },
+];
+
+export const MESSAGES = {
+  GUEST_LIMIT_REACHED:
+    "You've used your 3 free OCR attempts. Please log in or create a free account to continue.",
+  USER_LIMIT_REACHED:
+    "You've used all your OCR credits for today. Your limit resets daily. Please log in or upgrade your plan to continue.",
+  OCR_FAILED: 'Failed to process file. Please try again.',
+  AI_FAILED: 'AI Processing failed.',
+  SIGNIN_REQUIRED: 'Please log in or create a free account to continue.',
+};

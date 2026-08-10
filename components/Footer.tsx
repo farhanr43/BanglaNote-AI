@@ -1,10 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-interface FooterProps {
-  onNavigate: (view: 'HOME' | 'PRIVACY' | 'TERMS' | 'ADMIN') => void;
-}
-
-const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+const Footer: React.FC = () => {
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-12">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -23,24 +20,24 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex justify-center space-x-6">
-            <button 
-              onClick={() => onNavigate('PRIVACY')}
+            <Link 
+              to="/privacy"
               className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
             >
               Privacy
-            </button>
-            <button 
-              onClick={() => onNavigate('TERMS')}
+            </Link>
+            <Link 
+              to="/terms"
               className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
             >
               Terms
-            </button>
-            <button 
-              onClick={() => onNavigate('ADMIN')}
+            </Link>
+            <Link 
+              to="/admin"
               className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
             >
               Admin
-            </button>
+            </Link>
           </div>
         </div>
       </div>
