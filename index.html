@@ -4,8 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BanglaNote AI</title>
-    <!-- Favicon: Teal rounded square with document icon (matching header logo) -->
-    <link rel="icon" href='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect width=%2224%22 height=%2224%22 rx=%225%22 fill=%22%230d9488%22/><g transform=%22translate(2, 2) scale(0.83)%22><path stroke=%22white%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 fill=%22none%22 d=%22M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z%22/></g></svg>' type="image/svg+xml" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <!-- Tailwind CSS (CDN is fine for simple Vercel deployment) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <meta name="google-site-verification" content="2lwMIro9g5fdoVuPAhyXiYAnn7IvnMocHXJBBdOReMI" />
@@ -41,11 +40,79 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+      html {
+        scroll-behavior: smooth;
+      }
       body {
         font-family: 'Inter', sans-serif;
       }
       .font-bengali {
         font-family: 'Noto Sans Bengali', sans-serif;
+      }
+
+      /* ---------- Animations ---------- */
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+      @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.96) translateY(8px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50%      { background-position: 100% 50%; }
+      }
+      @keyframes floaty {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-14px); }
+      }
+      @keyframes glowPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.28); }
+        50%      { box-shadow: 0 0 0 12px rgba(13, 148, 136, 0); }
+      }
+      @keyframes shimmer {
+        0%   { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+
+      .animate-fade-in-up { animation: fadeInUp 0.6s ease-out both; }
+      .animate-fade-in    { animation: fadeIn 0.6s ease-out both; }
+      .animate-scale-in   { animation: scaleIn 0.25s ease-out both; }
+      .animate-floaty     { animation: floaty 7s ease-in-out infinite; }
+      .animate-glow       { animation: glowPulse 2.6s ease-in-out infinite; }
+      .animate-gradient-text {
+        background-size: 200% 200%;
+        animation: gradientShift 6s ease infinite;
+      }
+
+      .stagger > * { animation: fadeInUp 0.5s ease-out both; }
+      .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+      .stagger > *:nth-child(2) { animation-delay: 0.12s; }
+      .stagger > *:nth-child(3) { animation-delay: 0.19s; }
+      .stagger > *:nth-child(4) { animation-delay: 0.26s; }
+      .stagger > *:nth-child(5) { animation-delay: 0.33s; }
+      .stagger > *:nth-child(6) { animation-delay: 0.40s; }
+
+      .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.25);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
       }
     </style>
   <script type="importmap">

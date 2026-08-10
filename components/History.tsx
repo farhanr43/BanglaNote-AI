@@ -28,7 +28,7 @@ const History: React.FC<HistoryProps> = ({ history, onSelect, onClear }) => {
           <button
             key={item.id}
             onClick={() => onSelect(item)}
-            className="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all group"
+            className="hover-lift w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all group"
           >
             <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1 font-bengali">
               {item.previewText}

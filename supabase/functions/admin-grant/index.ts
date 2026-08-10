@@ -1,9 +1,8 @@
 // ============================================================================
-// BanglaNote AI — Admin subscription management (admin-granted payments)
+// BanglaNote AI — Admin subscription management
 //
-// Guarded by a shared secret ADMIN_TOKEN (env) sent as the `x-admin-token`
-// header. Calls service-role-only Postgres functions, so the anon key can
-// never grant subscriptions directly.
+// Auth: real Supabase session. The caller's JWT is verified and the user's
+// profile must have is_admin = true. There is NO shared admin secret.
 //
 // Modes:
 //   "list"   -> list users + pending subscription requests
@@ -12,14 +11,14 @@
 //   "reject" -> { requestId } mark a request as rejected
 //
 // Deploy: supabase functions deploy admin-grant --no-verify-jwt
-// Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_TOKEN
+// Secrets: none required (SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are
+//          auto-injected by Supabase and always kept current).
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const adminToken = Deno.env.get("ADMIN_TOKEN") ?? "";
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -40,6 +39,28 @@ const json = (body: unknown, status = 200) =>
 
 const errorResponse = (code: string, message: string, status = 400) =>
   json({ ok: false, error: { code, message } }, status);
+
+const bearerToken = (request: Request): string | null => {
+  const header = request.headers.get("authorization") ?? "";
+  return header.startsWith("Bearer ") ? header.slice(7).trim() : null;
+};
+
+/** Verify the JWT and confirm the user is an admin. */
+async function isAdminUser(request: Request): Promise<boolean> {
+  const token = bearerToken(request);
+  if (!token) return false;
+
+  const { data: user, error } = await supabase.auth.getUser(token);
+  if (error || !user?.user) return false;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.user.id)
+    .single();
+
+  return profile?.is_admin === true;
+}
 
 async function listAll() {
   const { data, error } = await supabase.rpc("admin_list_users");
@@ -70,7 +91,6 @@ async function approve(body: any) {
   const { requestId, days } = body ?? {};
   if (!requestId) return errorResponse("BAD_REQUEST", "requestId is required.");
 
-  // Fetch the pending request (service role bypasses RLS).
   const { data: rows, error: fetchErr } = await supabase
     .from("subscription_requests")
     .select("id, user_id, plan_id")
@@ -82,7 +102,6 @@ async function approve(body: any) {
   const row = rows?.[0];
   if (!row) return errorResponse("NOT_FOUND", "No pending request with that id.");
 
-  // Resolve email for the grant RPC.
   const { data: user, error: userErr } = await supabase.auth.admin.getUserById(row.user_id);
   if (userErr || !user?.user) return errorResponse("NOT_FOUND", "User not found.");
   const email = user.user.email!;
@@ -117,10 +136,9 @@ Deno.serve(async (req) => {
     return errorResponse("METHOD_NOT_ALLOWED", "POST only.", 405);
   }
 
-  // Shared-secret guard.
-  const provided = req.headers.get("x-admin-token");
-  if (!adminToken || provided !== adminToken) {
-    return errorResponse("UNAUTHORIZED", "Invalid admin token.", 401);
+  // Real admin auth: verified JWT + is_admin flag.
+  if (!(await isAdminUser(req))) {
+    return errorResponse("UNAUTHORIZED", "Admin access required.", 401);
   }
 
   try {

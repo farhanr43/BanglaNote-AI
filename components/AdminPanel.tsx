@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FeedbackItem } from '../types';
+import { AuthUser, FeedbackItem } from '../types';
 import Button from './Button';
 import { supabase } from '../services/supabaseClient';
+import { authService } from '../services/auth';
 import { PLANS } from '../constants';
 import {
   adminApproveRequest,
@@ -12,11 +13,13 @@ import {
 
 type Tab = 'feedback' | 'subscriptions';
 
-const AdminPanel: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+interface AdminPanelProps {
+  user: AuthUser | null;
+  onRequireLogin: () => void;
+}
+
+const AdminPanel: React.FC<AdminPanelProps> = ({ user, onRequireLogin }) => {
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [tab, setTab] = useState<Tab>('subscriptions');
 
   // Feedback state
@@ -32,12 +35,32 @@ const AdminPanel: React.FC = () => {
   const [grantDays, setGrantDays] = useState(30);
   const [adminMessage, setAdminMessage] = useState('');
 
+  // Resolve admin status from the real session's profile.
   useEffect(() => {
-    if (isAuthenticated) {
+    let cancelled = false;
+    if (!user) {
+      setIsAdmin(false);
+      return () => { cancelled = true; };
+    }
+
+    setIsAdmin(null);
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+      if (!cancelled) setIsAdmin(!!data?.is_admin);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  useEffect(() => {
+    if (isAdmin === true) {
       fetchFeedback();
       fetchAdminData();
     }
-  }, [isAuthenticated]);
+  }, [isAdmin]);
 
   const fetchFeedback = async () => {
     setIsLoadingFeedback(true);
@@ -81,26 +104,6 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Hardcoded credentials for client-side demo
-    if (username === 'endless' && password === '20043') {
-      setIsAuthenticated(true);
-      setError('');
-    } else {
-      setError('Invalid credentials');
-    }
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUsername('');
-    setPassword('');
-    setFeedbackList([]);
-    setUsers([]);
-    setPendingRequests([]);
-  };
-
   const handleGrant = async (e: React.FormEvent) => {
     e.preventDefault();
     setAdminMessage('');
@@ -138,54 +141,54 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  if (!isAuthenticated) {
+  const handleLogout = async () => {
+    await authService.signOut();
+  };
+
+  // Not logged in
+  if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] px-4">
-        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Login</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Please sign in to view feedback and manage subscriptions.
-            </p>
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Admin access</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+            Please log in with an admin account to manage feedback and subscriptions.
+          </p>
+          <Button variant="primary" className="w-full mt-6" onClick={onRequireLogin}>
+            Log In
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Checking admin status
+  if (isAdmin === null) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-teal-500 border-t-transparent"></div>
+        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Checking access…</p>
+      </div>
+    );
+  }
+
+  // Not an admin
+  if (isAdmin === false) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] px-4">
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/20 mb-4">
+            <svg className="h-7 w-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h.01M18 10a8 8 0 11-16 0 8 8 0 0116 0zM9.22 6.16a8 8 0 015.56 0" />
+            </svg>
           </div>
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Username
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2.5"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2.5"
-                required
-              />
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-500 text-center bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                {error}
-              </p>
-            )}
-
-            <Button variant="primary" type="submit" className="w-full">
-              Sign In
-            </Button>
-          </form>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Access denied</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+            Your account ({user.email}) does not have admin permissions.
+          </p>
+          <Button variant="outline" className="w-full mt-6" onClick={handleLogout}>
+            Switch account
+          </Button>
         </div>
       </div>
     );
@@ -194,7 +197,10 @@ const AdminPanel: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+        </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => { fetchFeedback(); fetchAdminData(); }} className="text-sm">
             Refresh

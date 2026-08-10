@@ -1,8 +1,5 @@
 project_id = "banglanote-ai"
 
-[functions]
-verify_jwt = false
-
 [functions.ai-proxy]
 verify_jwt = false
 memory = 1024

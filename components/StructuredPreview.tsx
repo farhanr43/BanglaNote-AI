@@ -108,7 +108,20 @@ const BlockView: React.FC<{ block: LayoutBlock }> = ({ block }) => {
 };
 
 const StructuredPreview: React.FC<StructuredPreviewProps> = ({ layout }) => {
-  if (!layout || !layout.blocks || layout.blocks.length === 0) {
+  const blocks = (() => {
+    if (!layout) return [];
+    if (layout.blocks && layout.blocks.length > 0) return layout.blocks;
+    if (layout.text && layout.text.trim()) {
+      return layout.text
+        .split(/\n+/)
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .map((t) => ({ type: 'paragraph' as const, text: t }));
+    }
+    return [];
+  })();
+
+  if (blocks.length === 0) {
     return (
       <p className="text-sm text-gray-400 italic">
         Upload a note to preview its detected layout here.
@@ -118,7 +131,7 @@ const StructuredPreview: React.FC<StructuredPreviewProps> = ({ layout }) => {
 
   return (
     <div className="font-bengali">
-      {layout.blocks.map((block, i) => (
+      {blocks.map((block, i) => (
         <BlockView key={i} block={block} />
       ))}
     </div>

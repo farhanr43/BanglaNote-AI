@@ -11,6 +11,7 @@ import FeedbackModal from './components/FeedbackModal';
 import AdminPanel from './components/AdminPanel';
 import AuthModal from './components/AuthModal';
 import PricingModal from './components/PricingModal';
+import PricingPage from './components/PricingPage';
 import StructuredPreview from './components/StructuredPreview';
 import { ProcessingStatus, AIActionType, HistoryItem, AuthUser, UsageSummary, LayoutResult } from './types';
 import { processImage, transformText, fileToGenerativePart, fetchUsage, CreditLimitError } from './services/ocrService';
@@ -225,7 +226,7 @@ const App: React.FC = () => {
         onLogin={() => setAuthModal({ open: true, mode: 'login' })}
         onSignup={() => setAuthModal({ open: true, mode: 'signup' })}
         onLogout={handleLogout}
-        onUpgrade={() => setIsPricingOpen(true)}
+        onUpgrade={() => navigate('/pricing')}
       />
 
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -233,16 +234,20 @@ const App: React.FC = () => {
 
         <Route path="/" element={<>
             {/* Intro Section */}
-            <div className="text-center mb-8">
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl mb-4 leading-tight">
-                Convert <span className="text-teal-600 block sm:inline">Bangla & English</span> Notes to Digital Text
+            <div className="text-center mb-8 relative overflow-hidden">
+              <div aria-hidden className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[560px] h-[320px] bg-teal-200/40 dark:bg-teal-500/10 blur-3xl rounded-full animate-floaty" />
+              <div aria-hidden className="pointer-events-none absolute top-10 -left-24 w-72 h-72 bg-teal-100/50 dark:bg-teal-500/5 blur-3xl rounded-full animate-floaty" style={{ animationDelay: '2s' }} />
+              <div aria-hidden className="pointer-events-none absolute -right-24 top-20 w-72 h-72 bg-cyan-100/50 dark:bg-cyan-500/5 blur-3xl rounded-full animate-floaty" style={{ animationDelay: '4s' }} />
+
+              <h1 className="relative animate-fade-in-up text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl mb-4 leading-tight">
+                Convert <span className="animate-gradient-text block sm:inline bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-500 bg-clip-text text-transparent">Bangla & English</span> Notes to Digital Text
               </h1>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              <p className="relative animate-fade-in-up text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto" style={{ animationDelay: '0.1s' }}>
                 Upload your class notes, documents, or PDFs. Our AI will extract the text, fix grammar, and help you summarize or translate it instantly.
               </p>
             </div>
 
-            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
+            <div className="animate-fade-in-up flex flex-col lg:grid lg:grid-cols-3 gap-8" style={{ animationDelay: '0.15s' }}>
               {/* Left Column: Upload & Preview */}
               <div className="lg:col-span-1 space-y-6 order-1">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-1">
@@ -314,7 +319,8 @@ const App: React.FC = () => {
 
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/pricing" element={<PricingPage user={user} usage={usage} onRequireLogin={() => openLoginWithMessage('Please log in or create a free account to request an upgrade.')} />} />
+        <Route path="/admin" element={<AdminPanel user={user} onRequireLogin={() => openLoginWithMessage('Please log in with an admin account to continue.')} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>

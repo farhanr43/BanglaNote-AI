@@ -54,10 +54,10 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading }) => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`
-        relative border-2 border-dashed rounded-2xl p-6 sm:p-12 text-center transition-all duration-300
+        group relative border-2 border-dashed rounded-2xl p-6 sm:p-12 text-center transition-all duration-300
         ${isDragging 
-          ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20' 
-          : 'border-gray-300 dark:border-gray-700 hover:border-teal-400 dark:hover:border-teal-600 bg-gray-50 dark:bg-gray-800/50'}
+          ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20 scale-[1.01]' 
+          : 'border-gray-300 dark:border-gray-700 hover:border-teal-400 dark:hover:border-teal-600 bg-gray-50 dark:bg-gray-800/50 hover:shadow-md'}
         ${isLoading ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
       `}
     >
@@ -71,8 +71,8 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading }) => {
       />
       
       <label htmlFor="file-upload" className="flex flex-col items-center justify-center h-full cursor-pointer">
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-full shadow-sm mb-4">
-          <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-full shadow-sm mb-4 animate-glow">
+          <svg className="w-8 h-8 text-teal-600 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>

@@ -63,13 +63,14 @@ Requires the [Supabase CLI](https://supabase.com/docs/guides/cli):
 ```bash
 supabase link --project-ref qfuzcgdkzcjwfrkfdsvx
 supabase db push                 # applies supabase/migrations/0001_auth_credits.sql
-supabase secrets set SUPABASE_URL=https://qfuzcgdkzcjwfrkfdsvx.supabase.co \
-  SUPABASE_SERVICE_ROLE_KEY=<service_role key> \
-  GEMINI_API_KEY=<Google AI Studio key> \
-  ADMIN_TOKEN=<a strong admin secret>
+supabase secrets set PROJECT_URL=https://qfuzcgdkzcjwfrkfdsvx.supabase.co \
+  SERVICE_ROLE_KEY=<service_role key> \
+  GEMINI_API_KEY=<Google AI Studio key>
 supabase functions deploy ai-proxy --no-verify-jwt
 supabase functions deploy admin-grant --no-verify-jwt
 ```
+
+> The CLI blocks secret names starting with `SUPABASE_`, so the edge functions read `PROJECT_URL` / `SERVICE_ROLE_KEY` instead.
 
 ### 2. Frontend (Vercel)
 
@@ -77,7 +78,6 @@ Set build env vars (no Gemini key is ever exposed to the browser):
 
 ```
 VITE_EDGE_FUNCTION_URL=https://qfuzcgdkzcjwfrkfdsvx.functions.supabase.co/ai-proxy
-VITE_ADMIN_TOKEN=<same strong admin secret as ADMIN_TOKEN>
 ```
 
 ### Google sign-in (optional)
@@ -94,11 +94,15 @@ The app uses **Supabase Google OAuth** (redirect flow — no client secrets in t
 
 ### 3. Admin access
 
-- Admin panel login is at the footer → **Admin** (default demo credentials).
-- To make a user an admin: `supabase db push` first, then
-  `update public.profiles set is_admin = true where id = '<auth.users id>';` (not currently used by the demo login, reserved for future hardening).
+The admin panel uses the **real Supabase session** — there is no hardcoded password. To grant someone admin access:
 
-> **Security note:** the client-side admin login and `VITE_ADMIN_TOKEN` are demo-grade. For production, gate `admin-grant` behind real admin authentication and protect it from public exposure.
+```sql
+-- in Supabase Dashboard -> SQL Editor
+update public.profiles set is_admin = true
+where id = (select id from auth.users where email = 'you@example.com');
+```
+
+Then log into the app with that account and open **Admin** (footer). The `admin-grant` edge function verifies the caller's JWT *and* the `is_admin` flag server-side before allowing any action. Non-admin users see an "Access denied" screen.
 
 ## ⚠️ Known limits
 

@@ -9,11 +9,11 @@
 //   "usage"     -> peek current credits without consuming
 //
 // Deploy:  supabase functions deploy ai-proxy --no-verify-jwt
-// Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY
+// Secrets: GEMINI_API_KEY (SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are
+//          auto-injected by Supabase and always kept current).
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { GoogleGenAI } from "npm:@google/genai@^1.30.0";
 
 const MODEL = "gemini-3.5-flash-lite";
 const GUEST_LIMIT_MESSAGE =
@@ -29,7 +29,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -172,41 +172,69 @@ function normalizeLayout(raw: string): { text: string; blocks: unknown[] } {
   if (parsed && typeof parsed === "object") {
     const text = typeof parsed.text === "string" ? parsed.text : "";
     const blocks = Array.isArray(parsed.blocks) ? parsed.blocks : [];
-    if (text || blocks.length) return { text, blocks };
+    if (blocks.length) return { text, blocks };
+    if (text.trim()) {
+      const paragraphs = text
+        .split(/\n+/)
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .map((t) => ({ type: "paragraph", text: t }));
+      return { text, blocks: paragraphs };
+    }
+    return { text: "", blocks: [] };
   }
 
   // Last resort: treat the raw output as one paragraph.
   return { text: raw || "", blocks: [{ type: "paragraph", text: raw || "" }] };
 }
 
-async function runOcr(base64: string, mimeType: string) {
-  if (!ai) throw new Error("Gemini is not configured (missing GEMINI_API_KEY)");
+async function geminiGenerate(parts: unknown[], schema?: unknown): Promise<string> {
+  if (!geminiApiKey) throw new Error("Gemini is not configured (missing GEMINI_API_KEY)");
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: {
-      parts: [
-        { inlineData: { mimeType, data: base64 } },
-        { text: LAYOUT_PROMPT },
-      ],
+  const generationConfig: Record<string, unknown> = {};
+  if (schema) {
+    generationConfig.responseMimeType = "application/json";
+    generationConfig.responseSchema = schema;
+  }
+
+  const res = await fetch(GEMINI_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": geminiApiKey,
     },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: LAYOUT_SCHEMA,
-    },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig,
+    }),
   });
 
-  const raw = response.text ?? "";
+  const payload = await res.json();
+  if (!res.ok) {
+    const detail = payload?.error?.message ?? JSON.stringify(payload);
+    throw new Error(detail);
+  }
+
+  return (
+    payload?.candidates?.[0]?.content?.parts
+      ?.map((p: any) => (typeof p?.text === "string" ? p.text : ""))
+      .join("") ?? ""
+  );
+}
+
+async function runOcr(base64: string, mimeType: string) {
+  const raw = await geminiGenerate(
+    [
+      { inlineData: { mimeType, data: base64 } },
+      { text: LAYOUT_PROMPT },
+    ],
+    LAYOUT_SCHEMA,
+  );
   return normalizeLayout(raw);
 }
 
 async function runTransform(prompt: string, text: string) {
-  if (!ai) throw new Error("Gemini is not configured (missing GEMINI_API_KEY)");
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: `${prompt}\n\n---\n\n${text}`,
-  });
-  return response.text ?? "";
+  return geminiGenerate([{ text: `${prompt}\n\n---\n\n${text}` }]);
 }
 
 // ----------------------------------------------------------------------------

@@ -20,6 +20,20 @@ export class CreditLimitError extends Error {
 // ---------------------------------------------------------------------------
 // Edge-function transport
 // ---------------------------------------------------------------------------
+const normalizeSummary = (summary: any): UsageSummary => {
+  if (!summary || typeof summary !== 'object') {
+    return { used: 0, limit: 0, remaining: 0, planId: '', planName: '', isGuest: true };
+  }
+  return {
+    used: summary.used ?? 0,
+    limit: summary.limit ?? 0,
+    remaining: summary.remaining ?? 0,
+    planId: summary.plan_id ?? summary.planId ?? '',
+    planName: summary.plan_name ?? summary.planName ?? '',
+    isGuest: summary.is_guest ?? summary.isGuest ?? false,
+  };
+};
+
 async function edgeRequest(body: Record<string, unknown>): Promise<any> {
   const token = await authService.getAccessToken();
   const headers: Record<string, string> = {
@@ -40,6 +54,8 @@ async function edgeRequest(body: Record<string, unknown>): Promise<any> {
   } catch {
     data = null;
   }
+
+  if (data && data.summary) data.summary = normalizeSummary(data.summary);
 
   if (!res.ok || data?.ok === false) {
     const code = data?.error?.code ?? 'UNKNOWN';

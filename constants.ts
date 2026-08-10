@@ -38,7 +38,6 @@ export const AI_PROXY_URL =
   (import.meta.env.VITE_EDGE_FUNCTION_URL as string) ||
   `${SUPABASE_PROJECT_URL}/functions/v1/ai-proxy`;
 export const ADMIN_GRANT_URL = `${SUPABASE_PROJECT_URL}/functions/v1/admin-grant`;
-export const ADMIN_TOKEN = (import.meta.env.VITE_ADMIN_TOKEN as string) || '';
 
 // Mirrors the seeded `plans` table; used for pricing UI only.
 // The backend (plans table) remains the source of truth for limits.

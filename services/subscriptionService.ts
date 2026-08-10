@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
-import { ADMIN_GRANT_URL, ADMIN_TOKEN } from '../constants';
+import { authService } from './auth';
+import { ADMIN_GRANT_URL } from '../constants';
 import { SubscriptionRequest } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -21,7 +22,8 @@ export const requestUpgrade = async (planId: string): Promise<{ ok: boolean; err
 };
 
 // ---------------------------------------------------------------------------
-// Admin-facing: routed through the admin-grant edge function (shared secret)
+// Admin-facing: routed through the admin-grant edge function, which verifies
+// the caller's Supabase session and is_admin flag server-side.
 // ---------------------------------------------------------------------------
 interface AdminListData {
   users: any[];
@@ -29,12 +31,14 @@ interface AdminListData {
 }
 
 async function adminEdge(body: Record<string, unknown>): Promise<any> {
-  if (!ADMIN_TOKEN) throw new Error('Admin token is not configured (VITE_ADMIN_TOKEN).');
+  const token = await authService.getAccessToken();
+  if (!token) throw new Error('You must be logged in to access the admin panel.');
+
   const res = await fetch(ADMIN_GRANT_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-admin-token': ADMIN_TOKEN,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
   });
