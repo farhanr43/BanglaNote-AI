@@ -9,13 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@abdalgolabs/ansi-unicode-converter": "^1.0.5",
     "@supabase/supabase-js": "^2.39.7",
     "docx": "^9.7.1",
+    "katex": "^0.16.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.30.4"
   },
   "devDependencies": {
+    "@types/katex": "^0.16.8",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",

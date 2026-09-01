@@ -109,3 +109,23 @@ export interface SubscriptionRequest {
   planId: string;
   createdAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// 4-step workflow
+// ---------------------------------------------------------------------------
+export type WorkflowStep = 1 | 2 | 3 | 4;
+
+export enum PipelineStatus {
+  IDLE = 'IDLE',
+  OCR_PROCESSING = 'OCR_PROCESSING',
+  ANALYSIS = 'ANALYSIS',
+  EDITING = 'EDITING',
+  EXPORT_READY = 'EXPORT_READY',
+  ERROR = 'ERROR',
+}
+
+export interface AnalysisPhase {
+  label: string;
+  done: boolean;
+  active: boolean;
+}
