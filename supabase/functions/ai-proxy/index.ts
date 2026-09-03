@@ -15,7 +15,8 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const MODEL = "gemini-1.5-flash";
+const MODEL = "gemini-3.5-flash-lite";
+const MODEL_FALLBACKS = ["gemini-3.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest"];
 const GUEST_LIMIT_MESSAGE =
   "You've used your 3 free OCR attempts. Please log in or create a free account to continue.";
 const USER_LIMIT_MESSAGE =
@@ -420,11 +421,15 @@ async function geminiGenerate(parts: unknown[], schema?: unknown): Promise<strin
     }
   };
   let res = await doFetch(MODEL);
-  // Fallback if primary model is not available (404) — try lightweight variant
+  // Fallback if primary model is not available (404) — try lightweight variants
+  // gemini-1.5-flash-8b was retired (404 for v1beta) so we chain through current Flash models
   if (res.status === 404) {
-    const fallback = MODEL === "gemini-1.5-flash" ? "gemini-1.5-flash-8b" : "gemini-1.5-flash";
-    console.warn(`Primary model ${MODEL} 404, retrying with ${fallback}`);
-    res = await doFetch(fallback);
+    for (const fallback of MODEL_FALLBACKS) {
+      if (fallback === MODEL) continue;
+      console.warn(`Primary model ${MODEL} 404, retrying with ${fallback}`);
+      res = await doFetch(fallback);
+      if (res.status !== 404) break;
+    }
   }
 
   let payload: any;
