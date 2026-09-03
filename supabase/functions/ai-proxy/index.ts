@@ -141,7 +141,7 @@ Content rules:
 - "text" is plain-text fallback with \\n between blocks, preserving $...$ for math.
 - blocks: heading (level 1-3), paragraph (may contain inline $...$), bullet/numbered (items array), table (rows), equation (display LaTeX).
 - Keep original language (Bangla and/or English). Do NOT translate. Do NOT hallucinate. Keep (2, 4), NUH-04, 11, etc. verbatim.
-- For this Bengali math document, ensure EVERY fraction has a horizontal vinculum via \\frac, EVERY exponent has ^{}, EVERY subscript has _{}, and display equations are centered.
+- For documents containing mathematics (Bangla or English), ensure EVERY fraction has a horizontal vinculum via \\frac, EVERY exponent has ^{}, EVERY subscript has _{}, and display equations are centered.
 
 Example (short) valid output:
 {"text":"উদাহরণ-35. $x^{2}-xy+4=0$\\nসমাধান : $x^{2}-xy+4=0$","blocks":[{"type":"paragraph","text":"উদাহরণ-35. $x^{2}-xy+4=0$"},{"type":"equation","text":"\\Rightarrow y = x + \\frac{4}{x}"}]}`;
@@ -392,7 +392,7 @@ async function geminiGenerate(parts: unknown[], schema?: unknown): Promise<strin
 
   const generationConfig: Record<string, unknown> = {
     temperature: 0.15,
-    maxOutputTokens: 6144,
+    maxOutputTokens: 16384,
   };
   if (schema) {
     generationConfig.responseMimeType = "application/json";
@@ -466,7 +466,27 @@ async function runOcr(base64: string, mimeType: string) {
     ],
     LAYOUT_SCHEMA,
   );
-  return normalizeLayout(raw);
+  console.log(`[ocr] raw length ${raw.length}, preview: ${raw.slice(0, 400)}`);
+  let parsed = normalizeLayout(raw);
+  console.log(`[ocr] parsed blocks ${parsed.blocks.length}, text length ${parsed.text.length}`);
+  // Fallback: if structured parsing yields empty (truncated JSON / hallucination filter),
+  // retry once without schema as plain text, then wrap as paragraphs
+  if (parsed.blocks.length === 0 && !parsed.text.trim()) {
+    console.warn(`[ocr] empty structured result, retrying plain-text OCR`);
+    const fallbackRaw = await geminiGenerate([
+      { inlineData: { mimeType, data: base64 } },
+      { text: `Extract ALL text from this document image verbatim. Preserve reading order, paragraphs, headings, lists, and tables. Keep original language (Bangla and/or English). Return plain text only, no JSON, no markdown.` },
+    ]);
+    const cleaned = sanitizeText(fallbackRaw);
+    console.log(`[ocr] fallback raw length ${fallbackRaw.length}, cleaned ${cleaned.length}`);
+    if (cleaned.trim() && !isHallucinated(cleaned)) {
+      const paragraphs = cleaned.split(/\n+/).map((t) => t.trim()).filter(Boolean).filter((t) => !isHallucinated(t)).map((t) => ({ type: "paragraph" as const, text: t }));
+      if (paragraphs.length) return { text: cleaned, blocks: paragraphs };
+    }
+    // if still empty, throw so caller can surface error instead of charging credit for empty
+    throw new Error("OCR returned empty result (model returned no parsable text). Try a clearer image or Re-analyze layout.");
+  }
+  return parsed;
 }
 
 async function runTransform(prompt: string, text: string) {
