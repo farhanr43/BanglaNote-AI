@@ -123,6 +123,7 @@ CRITICAL OUTPUT RULES — VIOLATION WILL BREAK THE APP:
 
 Content rules:
 - Preserve headings, paragraphs, bullet/numbered lists, tables, bold/italic/underline, alignment, indentation, question/answer structures exactly as they appear.
+- CRITICAL LAYOUT: NEVER merge the entire page into ONE block. Each numbered question (e.g. "১৩।", "১৪।", "২২।", "23.", "Q1") MUST be a separate block. Each উদ্দীপক / stimulus paragraph MUST be its own paragraph block. Two-column pages: read column-wise top-to-bottom per column in numeric order (left column ১৩-২১ then right column ২২-৩০). Preserve sub-items "i. ii. iii." on separate lines/numbered items and options "(ক) (খ) (গ) (ঘ)" as items array (or within block text with \\n). Keep original numbering verbatim.
 - MATHEMATICAL FIDELITY (CRITICAL for this document type):
   - Inline math inside a paragraph: use $...$ e.g. "প্রদত্ত সমীকরণ, $x^{2}-xy+4=0$" , "(2, 4) বিন্দুতে $y_{1}=1-1=0$ এবং $y_{2}=\\frac{8}{8}=1$"
   - Display / centered equations: type "equation" with LaTeX WITHOUT outer $, centered and with vertical fractions. Use \\frac for EVERY fraction, even simple ones.
@@ -143,8 +144,13 @@ Content rules:
 - Keep original language (Bangla and/or English). Do NOT translate. Do NOT hallucinate. Keep (2, 4), NUH-04, 11, etc. verbatim.
 - For documents containing mathematics (Bangla or English), ensure EVERY fraction has a horizontal vinculum via \\frac, EVERY exponent has ^{}, EVERY subscript has _{}, and display equations are centered.
 
-Example (short) valid output:
-{"text":"উদাহরণ-35. $x^{2}-xy+4=0$\\nসমাধান : $x^{2}-xy+4=0$","blocks":[{"type":"paragraph","text":"উদাহরণ-35. $x^{2}-xy+4=0$"},{"type":"equation","text":"\\Rightarrow y = x + \\frac{4}{x}"}]}`;
+Examples — you MUST follow the block-splitting pattern:
+
+Math example:
+{"text":"উদাহরণ-35. $x^{2}-xy+4=0$\\nসমাধান : $x^{2}-xy+4=0$","blocks":[{"type":"paragraph","text":"উদাহরণ-35. $x^{2}-xy+4=0$"},{"type":"equation","text":"\\Rightarrow y = x + \\frac{4}{x}"}]}
+
+MCQ two-column example (EACH question = separate block):
+{"text":"১৩। ছকে প্রদর্শিত সালের আইন অনুসারে\\ni. সর্বভারতীয় যুক্তরাষ্ট্র গঠন করা হয়\\niii. ভারত সচিবের পদ সৃষ্টি করা হয়\\nনিচের কোনটি সঠিক? (ক) i ও ii (খ) ii ও iii","blocks":[{"type":"paragraph","text":"১৩। ছকে প্রদর্শিত সালের আইন অনুসারে\\ni. সর্বভারতীয় যুক্তরাষ্ট্র গঠন করা হয়\\nii. প্রাদেশিক স্বায়ত্তশাসন প্রবর্তন করা হয়\\niii. ভারত সচিবের পদ সৃষ্টি করা হয়"},{"type":"paragraph","text":"নিচের কোনটি সঠিক? (ক) i ও ii (খ) i ও iii (গ) i ও iii (ঘ) ii, iii"},{"type":"paragraph","text":"উদ্দীপকটি পড়ে ১৭ ও ১৮নং প্রশ্নের উত্তর দাও: \"ক\" উপমহাদেশের একজন মহান নেতা..."},{"type":"paragraph","text":"১৭। উদ্দীপকে বর্ণিত নেতা কে? (ক) চিত্তরঞ্জন দাস (খ) শেরে বাংলা এ. কে. ফজলুল হক"}]}`;
 
 const LAYOUT_SCHEMA = {
   type: "object",
