@@ -42,7 +42,7 @@ async function edgeRequest(body: Record<string, unknown>): Promise<any> {
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const controller = new AbortController();
-  const to = setTimeout(() => controller.abort(), 45000);
+  const to = setTimeout(() => controller.abort(), 120000);
   let res: Response;
   try {
     res = await fetch(AI_PROXY_URL, { method: 'POST', headers, body: JSON.stringify(body), signal: controller.signal });
@@ -99,7 +99,7 @@ export const prepareFileForOCR = async (file: File): Promise<{ base64: string; m
     return { base64, mimeType: file.type };
   };
   if (file.type === 'application/pdf' || !file.type.startsWith('image/')) return readOriginal();
-  if (file.size < 700 * 1024) return readOriginal();
+  if (file.size < 400 * 1024) return readOriginal();
   try {
     const objectUrl = URL.createObjectURL(file);
     const bitmap = await new Promise<HTMLImageElement>((resolve, reject) => {

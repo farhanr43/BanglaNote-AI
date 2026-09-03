@@ -402,7 +402,7 @@ async function geminiGenerate(parts: unknown[], schema?: unknown): Promise<strin
   const doFetch = async (model: string): Promise<Response> => {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45000);
+    const timeout = setTimeout(() => controller.abort(), 90000);
     try {
       return await fetch(url, {
         method: "POST",
@@ -416,6 +416,9 @@ async function geminiGenerate(parts: unknown[], schema?: unknown): Promise<strin
         }),
         signal: controller.signal,
       });
+    } catch (e: any) {
+      if (e?.name === "AbortError") throw new Error(`Gemini request timed out after 90s for model ${model} — try a smaller/clearer image or retry`);
+      throw e;
     } finally {
       clearTimeout(timeout);
     }
